@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chatbot Analytics Dashboard</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<style>
+		.accordion-content {
+			max-height: 0;
+			overflow: hidden;
+			transition: max-height 0.3s ease-out;
+		}
+		.accordion-content.active {
+			max-height: none;
+			transition: max-height 0.3s ease-in;
+		}
+		.message-bubble {
+			max-width: 80%;
+			word-wrap: break-word;
+		}
+		.user-message {
+			background-color: #3b82f6;
+			color: white;
+			margin-left: auto;
+		}
+		.assistant-message {
+			background-color: #f3f4f6;
+			color: #374151;
+		}
+	</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+	<div class="container mx-auto px-4 py-8">
+		<h1 class="text-3xl font-bold text-gray-800 mb-8">Chatbot Analytics Dashboard</h1>
+
+		<!-- Configuration Section -->
+		<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+			<h2 class="text-xl font-semibold text-gray-700 mb-4">Configuration</h2>
+			<div class="grid grid-cols-1 gap-4">
+				<div>
+					<label for="apiBaseUrl" class="block text-sm font-medium text-gray-700 mb-1">API Base URL</label>
+					<input type="text" id="apiBaseUrl" value="https://conversational.blockhealth.co" 
+						   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+					<p class="text-xs text-gray-500 mt-1">Base URL for the chatbot API endpoint</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Filter Section -->
+		<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+			<h2 class="text-xl font-semibold text-gray-700 mb-4">Filters</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				<div>
+					<label for="agent_id" class="block text-sm font-medium text-gray-700 mb-1">Agent ID</label>
+					<input type="text" id="agent_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+				<div>
+					<label for="partner_id" class="block text-sm font-medium text-gray-700 mb-1">Partner ID</label>
+					<input type="text" id="partner_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+				<div>
+					<label for="assigned_phone_number" class="block text-sm font-medium text-gray-700 mb-1">Assigned Phone Number</label>
+					<input type="text" id="assigned_phone_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+				<div>
+					<label for="caller_phone" class="block text-sm font-medium text-gray-700 mb-1">Caller Phone</label>
+					<input type="text" id="caller_phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+				<div>
+					<label for="mode" class="block text-sm font-medium text-gray-700 mb-1">Mode</label>
+					<select id="mode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+						<option value="">Select Mode</option>
+						<option value="call">Call</option>
+						<option value="web">Web</option>
+						<option value="chat">Chat</option>
+					</select>
+				</div>
+				<div>
+					<label for="timestamp" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+					<input type="date" id="timestamp" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+			</div>
+			<div class="mt-4 flex gap-4">
+				<button id="getDataBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+					Get Data
+				</button>
+				<button id="clearFiltersBtn" class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+					Clear Filters
+				</button>
+			</div>
+		</div>
+
+		<!-- Loading Indicator -->
+		<div id="loadingIndicator" class="hidden text-center py-8">
+			<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+			<p class="mt-2 text-gray-600">Loading data...</p>
+		</div>
+
+		<!-- Error Message -->
+		<div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+			<span id="errorText"></span>
+		</div>
+
+		<!-- Results Table -->
+		<div id="resultsSection" class="hidden">
+			<div class="bg-white rounded-lg shadow-md overflow-hidden">
+				<div class="px-6 py-4 border-b border-gray-200">
+					<h2 class="text-xl font-semibold text-gray-700">Results</h2>
+					<p id="resultCount" class="text-sm text-gray-600 mt-1"></p>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="min-w-full divide-y divide-gray-200">
+						<thead class="bg-gray-50">
+							<tr id="tableHeader"></tr>
+						</thead>
+						<tbody id="tableBody" class="bg-white divide-y divide-gray-200"></tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<!-- Chat History Side Panel -->
+		<div id="chatHistoryPanel" class="fixed inset-0 z-50 hidden">
+			<div id="chatHistoryBackdrop" class="absolute inset-0 bg-black bg-opacity-50"></div>
+			<div id="chatHistoryContent" class="absolute left-0 top-0 h-full w-1/2 bg-white shadow-xl transform -translate-x-full transition-transform duration-300 ease-in-out">
+				<div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+					<h2 class="text-xl font-semibold text-gray-700">Chat History</h2>
+					<button id="closeChatHistory" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+				<div class="flex flex-col h-full">
+					<div id="chatHistory" class="flex-1 flex flex-col p-4 min-h-0">
+						<h3 class="text-lg font-semibold text-gray-700 mb-3 flex-shrink-0">Conversation History</h3>
+						<div class="relative flex-1 min-h-0">
+							<div class="absolute inset-0 overflow-y-auto border border-gray-200 rounded-lg p-4" id="panelScrollContainer">
+								<div id="messagesContainer" class="space-y-4 pb-12"></div>
+							</div>
+							<button 
+								id="panelScrollToBottomBtn" 
+								class="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-opacity opacity-0 z-10"
+								title="Scroll to bottom"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+								</svg>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="analytics.js"></script>
+</body>
+</html>
+
+

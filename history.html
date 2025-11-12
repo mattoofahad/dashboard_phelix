@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat History - Chatbot Logs Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.active {
+            max-height: none;
+            transition: max-height 0.3s ease-in;
+        }
+        .message-bubble {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #3b82f6;
+            color: white;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .filler-message {
+            background-color: #a855f7; /* purple-500 */
+            color: white;
+        }
+        .function-message {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        .json-content {
+            background-color: #1f2937;
+            color: #f9fafb;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Chat History</h1>
+            <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Configuration</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label for="apiBaseUrl" class="block text-sm font-medium text-gray-700 mb-1">API Base URL</label>
+                    <input type="text" id="apiBaseUrl" value="https://conversational.blockhealth.co" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Base URL for the chatbot API endpoint</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat ID Input Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Get Chat History</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label for="chatId" class="block text-sm font-medium text-gray-700 mb-1">Chat ID</label>
+                    <input type="text" id="chatId" placeholder="Enter chat ID" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Enter the chat ID to retrieve history</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button id="getDataBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Get Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Loading data...</p>
+        </div>
+
+        <!-- Chat Metadata -->
+        <div id="chatMetadata" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Chat Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Chat ID</label>
+                    <p id="chatIdValue" class="text-sm text-gray-900 break-all"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Agent ID</label>
+                    <p id="agentId" class="text-sm text-gray-900 break-all"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Partner ID</label>
+                    <p id="partnerId" class="text-sm text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Mode</label>
+                    <p id="mode" class="text-sm text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Assigned Phone</label>
+                    <p id="assignedPhone" class="text-sm text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Caller Phone</label>
+                    <p id="callerPhone" class="text-sm text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Timestamp</label>
+                    <p id="timestamp" class="text-sm text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Run ID</label>
+                    <p id="runId" class="text-sm text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">RID</label>
+                    <p id="ridValue" class="text-sm text-gray-900 break-all"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <span id="errorText"></span>
+        </div>
+
+        <!-- Chat History -->
+        <div id="chatHistory" class="hidden">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Conversation History</h2>
+                <div class="relative">
+                    <div class="h-[700px] overflow-y-auto border border-gray-200 rounded-lg p-4" id="scrollContainer">
+                        <div id="messagesContainer" class="space-y-4 pb-12">
+                            <!-- Messages will be populated here -->
+                        </div>
+                    </div>
+                    <button 
+                        id="scrollToBottomBtn" 
+                        class="absolute bottom-2 right-2 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-opacity opacity-0"
+                        title="Scroll to bottom"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="history.js"></script>
+</body>
+</html>
